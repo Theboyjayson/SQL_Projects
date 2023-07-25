@@ -1,0 +1,115 @@
+-- 1. query to view both tables
+SELECT *
+FROM covid_deaths
+
+SELECT *
+FROM covid_vaccinations
+
+-- 2. query to track vaccination progress
+-- Query to track the progress of vaccinations over time in different countries or continents
+SELECT location, date, new_vaccinations, total_vaccinations
+FROM covid_vaccinations
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+-- Query to compare the vaccination rates across different regions or countries
+SELECT location, date, total_vaccinations, population, (total_vaccinations / population) * 100 AS vaccination_rate
+FROM covid_vaccinations
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+-- Query to analyze the distribution of vaccine types used in different regions
+SELECT location, vaccine_type, SUM(new_vaccinations) AS total_vaccinations
+FROM covid_vaccinations
+WHERE continent IS NOT NULL AND vaccine_type IS NOT NULL
+GROUP BY location, vaccine_type;
+
+-- 3. mortality and recovery rate
+-- Query to calculate the mortality rate and recovery rate over time for different countries or continents
+SELECT location, date, total_cases, total_deaths, total_recovered,
+       (total_deaths / total_cases) * 100 AS mortality_rate,
+       (total_recovered / total_cases) * 100 AS recovery_rate
+FROM covid_deaths
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+-- 4. Query to analyze the relationship between vaccination rates and mortality/recovery rates
+SELECT Deaths.location, Deaths.date, Deaths.total_cases, Deaths.total_deaths, Deaths.total_recovered,
+       Deaths.new_vaccinations, Deaths.total_vaccinations,
+       (Deaths.total_deaths / Deaths.total_cases) * 100 AS mortality_rate,
+       (Deaths.total_recovered / Deaths.total_cases) * 100 AS recovery_rate,
+       (Deaths.total_vaccinations / Deaths.population) * 100 AS vaccination_rate
+FROM covid_deaths AS Deaths
+JOIN covid_vaccinations AS Vac
+ON Deaths.location = Vac.location
+AND Deaths.date = Vac.date
+WHERE Deaths.continent IS NOT NULL
+ORDER BY Deaths.location, Deaths.date;
+
+-- 5. Query to calculate the CFR (total_deaths / total_cases) for different regions and compare them
+SELECT location, date, total_cases, total_deaths, (total_deaths / total_cases) * 100 AS case_fatality_rate
+FROM covid_deaths
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+-- 6. Query to examine testing rates and positivity rates to understand the scale of testing and the spread of the virus in different regions
+SELECT location, date, total_tests, total_cases, (total_cases / total_tests) * 100 AS positivity_rate
+FROM covid_deaths
+WHERE continent IS NOT NULL AND total_tests IS NOT NULL
+ORDER BY location, date;
+
+-- 7.Showing the location and TotalDeathCount for each location
+SELECT 
+    location, 
+    SUM(CAST(new_deaths AS INT)) AS TotalDeathCount
+FROM covid_deaths
+WHERE continent IS NULL AND location NOT IN ('World', 'European Union', 'International')
+GROUP BY location
+ORDER BY TotalDeathCount DESC;
+
+--8. Demographic Analysis
+-- Query to study the impact of COVID-19 on different age groups
+SELECT age_group, SUM(new_cases) AS total_cases, SUM(new_deaths) AS total_deaths
+FROM covid_deaths
+WHERE continent IS NOT NULL AND age_group IS NOT NULL
+GROUP BY age_group
+ORDER BY total_cases DESC;
+
+-- 9. Query to investigate how the virus affects vulnerable populations like the elderly
+SELECT location, date, new_cases, new_deaths
+FROM covid_deaths
+WHERE continent IS NOT NULL AND location = 'Elderly Population'
+ORDER BY date;
+
+-- 10. Query to analyze the impact of COVID-19 on different genders
+SELECT gender, SUM(new_cases) AS total_cases, SUM(new_deaths) AS total_deaths
+FROM covid_deaths
+WHERE continent IS NOT NULL AND gender IS NOT NULL
+GROUP BY gender;
+
+-- 11. The death rate in the United Kingdom and the probability of contracting it
+SELECT 
+    location, 
+    date, 
+    total_cases, 
+    total_deaths, 
+    (total_deaths / total_cases) * 100 AS death_rate
+FROM covid_deaths
+WHERE location LIKE '%United Kingdom%' AND continent IS NOT NULL 
+ORDER BY date;
+
+--12. Understanding the impact on healthcare systemn
+-- Query to analyze hospitalization rates and ICU occupancy
+SELECT location, date, total_hospitalized, total_icu
+FROM covid_deaths
+WHERE continent IS NOT NULL AND total_hospitalized IS NOT NULL AND total_icu IS NOT NULL
+ORDER BY location, date;
+
+-- 13. Query to explore how the availability of medical resources affects the overall response to the pandemic
+SELECT location, date, total_cases, total_deaths, total_tests, total_vaccinations, total_hospitalized, total_icu
+FROM covid_deaths
+LEFT JOIN covid_vaccinations ON covid_deaths.location = covid_vaccinations.location AND covid_deaths.date = covid_vaccinations.date
+WHERE continent IS NOT NULL
+ORDER BY location, date;
+
+
